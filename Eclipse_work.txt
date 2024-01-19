@@ -1,0 +1,48 @@
+test case
+
+object Test {
+  
+  def main(args:Array[String]):Unit={
+    println("test")
+  }
+}
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+Sqaure on an Array
+
+
+package RDDbasics
+
+import org.apache.spark.{SparkConf, SparkContext}
+
+object SimpleArraySpark {
+  def main(args: Array[String]): Unit = {
+   
+    val conf = new SparkConf().setAppName("SimpleArraySpark").setMaster("local[*]")
+
+    
+    val sc = new SparkContext(conf)
+
+   
+    val data = Array(1, 2, 3, 4, 5,6,7,8,9)
+
+   
+    val rdd = sc.parallelize(data)
+
+   
+    val squaredRDD = rdd.map(x => x * x)
+
+    //this a comment
+    println("Original Array: " + data.mkString(", "))
+
+    
+    println("Squared Array: " + squaredRDD.collect().mkString(", "))
+
+   
+    sc.stop()
+  }
+}
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
