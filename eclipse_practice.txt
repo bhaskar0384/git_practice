@@ -1,0 +1,217 @@
+
+-------------------------------------------------------
+==> Main Method
+
+object Test {
+  
+  def main(args:Array[String]):Unit={
+    println("test")
+  }
+}
+
+-------------------------------------------------------
+==> Square of an Array
+
+package RDDbasics
+
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.SparkConf
+
+object CreatingSparkcontext {
+  def main(args: Array[String]): Unit = {
+    val sparkConf = new SparkConf()
+    sparkConf.setMaster("local") 
+    
+    val sc = new SparkContext(sparkConf)
+    
+    val array = Array(1,2,3,4,5,6)
+    
+    val arrayRDD = sc.parallelize(array,2)
+    
+    println("Num of elements in RDD: ", arrayRDD.count())
+    arrayRDD.foreach(println)
+    
+    
+  }
+}
+
+
+
+
+-------------------------------------------------------
+==> word count prograrmme
+
+
+import org.apache.spark.SparkContext
+import org.apache.spark.SparkConf
+  
+object WordCount {
+    def main(args: Array[String]) {
+  
+        /* configure spark application */
+        val conf = new SparkConf().setAppName("Spark Scala WordCount Example").setMaster("local[1]")
+  
+        /* spark context*/
+        val sc = new SparkContext(conf)
+  
+        /* map */
+        var map = sc.textFile("D:/test_folder/word_count.txt").flatMap(line => line.split(" ")).map(word => (word,1))
+  
+        /* reduce */
+        var counts = map.reduceByKey(_ + _)
+  
+        /* print */
+        counts.collect().foreach(println)
+  
+        /* or save the output to file */
+        counts.saveAsTextFile("out.txt")
+  
+        sc.stop()
+    }
+}
+
+
+----------------------------------------------------------------------------------------
+ ==>Requirement
+
+d: drive ==> 
+headers should be true.
+format should be csv  and create a data frame.
+2nd highest salay from each department.
+print result in console 
+write the data 
+
+
+jira ==> update
+
+test cases
+------------------------------------------------------------------------------------------------------------------------------
+==>use case :
+
+==>working on
+
+package RDDbasics
+import org.apache.spark._
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.functions._
+
+
+
+
+object CSV_Test_case {
+  def main(args: Array[String]): Unit = {
+   
+   
+   val spark = SparkSession.builder().appName("app_name").master("local").getOrCreate()
+
+var readDF = spark.read.format("csv").option("delimeted",",").option("header","true").load("D:\\Practice\\sample_data\\salary.csv")
+
+
+val windowSpec = Window.partitionBy("Department").orderBy(col("salary").desc)
+
+val rankedDF = readDF.withColumn("rank", dense_rank().over(windowSpec))
+val secondHighestSalaryDF = rankedDF.filter(col("rank") === 2)
+var final_result=secondHighestSalaryDF
+final_result.write.csv("D:\\Practice\\sample_data\\Eclipse_Results\\test")
+
+spark.stop()
+
+
+      }
+}
+
+secondHighestSalaryDF.write
+      .format("csv")
+      .option("header", "true")
+      .mode("overwrite")
+      .save("path/to/your/local/output/folder")
+------------------------------------------------------------------------------------------------------------------
+==> requirement
+
+we have some dupliacte records in the file . we need to remove duplictates and show in the other file 
+
+//readDF.write.mode("overWrite").format("parquet").save("D:\\Practice\\final_output\\test")
+readDF.write.csv("D:\\Practice\\final_output\\test")
+
+
+
+package RDDbasics
+import org.apache.spark._
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.functions._
+
+
+
+object CSV_Test_case {
+  def main(args: Array[String]): Unit = {
+   
+   
+   val spark = SparkSession.builder().appName("app_name").master("local").getOrCreate()
+
+val df = spark.read.format("csv").option("delimeted",",").option("header","true").load("D:\\Practice\\sample_data\\salary.csv")
+//df.show()
+    val duplicateRecords = df.groupBy("Name","Department","City","Salary").count().where(col("count") > 1)
+
+//duplicateRecords.show()
+
+    val uniqueRecords = df.dropDuplicates("Name","Department","City","Salary")
+    val recordsWithDuplicates = df.join(duplicateRecords.select("Name","Department","City","Salary"), Seq("Name","Department","City","Salary"), "left_anti")
+   //uniqueRecords.show()
+    //recordsWithDuplicates.show()
+    
+    
+    //uniqueRecords.write.option("header", "true").csv("D:\\Practice\\final_output\\unique")
+   // duplicateRecords.write.option("header", "true").csv("D:\\Practice\\final_output\\duplicate")
+    
+    //uniqueRecords.write.mode("overwrite").option("header","true").parquet("D:\\Practice\\final_output\\unique1.parquet")
+    duplicateRecords.write.mode("overwrite").option("header", "true").parquet("D:\\Practice\\final_output\\duplicate1.parquet")
+
+
+      }
+}
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------
+
+==> duplicate zipcodes
+
+package RDDbasics
+import org.apache.spark._
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.functions._
+
+object duplicates {
+  def main(args: Array[String]): Unit = {
+   
+   
+    val spark = SparkSession.builder().appName("app_name").master("local").getOrCreate()
+
+    val df = spark.read.format("csv").option("delimeted",",").option("header","true").load("D:\\Practice\\sample_data\\zipcode.csv")
+    //df.show()
+
+    val duplicateRecords = df.groupBy("zip","city","state","latitude","longitude","timezone","dst").count().where(col("count") > 1)
+    //duplicateRecords.show()
+
+    val uniqueRecords = df.dropDuplicates("zip","city","state","latitude","longitude","timezone","dst")
+    // uniqueRecords.show()
+   
+    
+    
+    //uniqueRecords.write.option("header", "true").csv("D:\\Practice\\final_output\\unique_zipcode")
+   // duplicateRecords.write.option("header", "true").csv("D:\\Practice\\final_output\\duplicate_zipcode")
+    
+   // uniqueRecords.write.mode("overwrite").format("parquet").save("D:\\Practice\\final_output\\unique_zipcode.parquet")
+   //duplicateRecords.write.mode("overwrite").format("parquet").save("D:\\Practice\\final_output\\duplicate_zipcode.parquet")
+
+
+      }
+
+}
+
+----------------------------------------------------------------------------------------------------------------------------------------
